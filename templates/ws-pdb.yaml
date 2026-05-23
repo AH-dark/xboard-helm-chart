@@ -1,0 +1,13 @@
+{{- if .Values.ws.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "xboard.componentName" (dict "ctx" . "role" "ws-server") }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "ws-server") | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.ws.pdb.minAvailable | quote }}
+  selector:
+    matchLabels:
+      {{- include "xboard.selectorLabels" (dict "ctx" . "role" "ws-server") | nindent 6 }}
+{{- end }}

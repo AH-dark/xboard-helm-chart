@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "xboard.componentName" (dict "ctx" . "role" "ws-server") }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "ws-server") | nindent 4 }}
+  annotations:
+    {{- if .Values.reloader.enabled }}
+    secret.reloader.stakater.com/reload: {{ include "xboard.configSecretName" . | quote }}
+    {{- end }}
+    checksum/config: {{ include "xboard.configChecksum" . | quote }}
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.ws.hpa.enabled }}
+  replicas: {{ .Values.ws.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "xboard.selectorLabels" (dict "ctx" . "role" "ws-server") | nindent 6 }}
+  strategy:
+    {{- toYaml .Values.ws.strategy | nindent 4 }}
+  revisionHistoryLimit: {{ .Values.ws.revisionHistoryLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "xboard.componentLabels" (dict "ctx" . "role" "ws-server") | nindent 8 }}
+        {{- with .Values.ws.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.ws.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.ws.terminationGracePeriodSeconds }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ws.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ws.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ws.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ws-server
+          image: {{ include "xboard.image" (dict "ctx" . "role" "ws") }}
+          imagePullPolicy: {{ include "xboard.imagePullPolicy" (dict "ctx" . "role" "ws") }}
+          ports:
+            - name: {{ .Values.ws.containerPortName }}
+              containerPort: {{ .Values.ws.containerPort }}
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: {{ include "xboard.configSecretName" . }}
+          env:
+            - name: docker
+              value: "true"
+            {{- include "xboard.disabledFlagsEnv" (dict "ctx" . "flags" .Values.ws.disabledFlags) | nindent 12 }}
+            {{- with .Values.ws.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.ws.resources | nindent 12 }}
+          startupProbe:
+            {{- toYaml .Values.ws.probes.startup | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.ws.probes.liveness | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.ws.probes.readiness | nindent 12 }}

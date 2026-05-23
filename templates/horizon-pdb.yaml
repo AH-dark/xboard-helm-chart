@@ -1,0 +1,13 @@
+{{- if .Values.horizon.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "xboard.componentName" (dict "ctx" . "role" "horizon") }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "horizon") | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.horizon.pdb.minAvailable | quote }}
+  selector:
+    matchLabels:
+      {{- include "xboard.selectorLabels" (dict "ctx" . "role" "horizon") | nindent 6 }}
+{{- end }}

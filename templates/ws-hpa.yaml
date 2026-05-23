@@ -1,0 +1,17 @@
+{{- if .Values.ws.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "xboard.componentName" (dict "ctx" . "role" "ws-server") }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "ws-server") | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "xboard.componentName" (dict "ctx" . "role" "ws-server") }}
+  minReplicas: {{ .Values.ws.hpa.minReplicas }}
+  maxReplicas: {{ .Values.ws.hpa.maxReplicas }}
+  metrics:
+    {{- toYaml .Values.ws.hpa.metrics | nindent 4 }}
+{{- end }}

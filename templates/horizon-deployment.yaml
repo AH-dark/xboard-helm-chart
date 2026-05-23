@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "xboard.componentName" (dict "ctx" . "role" "horizon") }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "horizon") | nindent 4 }}
+  annotations:
+    {{- if .Values.reloader.enabled }}
+    secret.reloader.stakater.com/reload: {{ include "xboard.configSecretName" . | quote }}
+    {{- end }}
+    checksum/config: {{ include "xboard.configChecksum" . | quote }}
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.horizon.hpa.enabled }}
+  replicas: {{ .Values.horizon.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "xboard.selectorLabels" (dict "ctx" . "role" "horizon") | nindent 6 }}
+  strategy:
+    {{- toYaml .Values.horizon.strategy | nindent 4 }}
+  revisionHistoryLimit: {{ .Values.horizon.revisionHistoryLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "xboard.componentLabels" (dict "ctx" . "role" "horizon") | nindent 8 }}
+        {{- with .Values.horizon.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.horizon.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.horizon.terminationGracePeriodSeconds }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.horizon.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.horizon.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.horizon.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: horizon
+          image: {{ include "xboard.image" (dict "ctx" . "role" "horizon") }}
+          imagePullPolicy: {{ include "xboard.imagePullPolicy" (dict "ctx" . "role" "horizon") }}
+          envFrom:
+            - secretRef:
+                name: {{ include "xboard.configSecretName" . }}
+          env:
+            - name: docker
+              value: "true"
+            {{- include "xboard.disabledFlagsEnv" (dict "ctx" . "flags" .Values.horizon.disabledFlags) | nindent 12 }}
+            {{- with .Values.horizon.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.horizon.resources | nindent 12 }}
+          startupProbe:
+            {{- toYaml .Values.horizon.probes.startup | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.horizon.probes.liveness | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.horizon.probes.readiness | nindent 12 }}

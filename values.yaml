@@ -1,0 +1,356 @@
+# Default values for xboard.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: ghcr.io/cedar2025/xboard
+  # tag: overrides Chart.appVersion when set. Leave empty to use appVersion ("latest").
+  tag: ""
+  # pullPolicy: overrides smart ternary when set. Leave empty for auto (Always when tag=latest/"", else IfNotPresent).
+  pullPolicy: ""
+  pullSecrets: []
+
+# Override the chart name
+nameOverride: ""
+# Override the full name (release-chart)
+fullnameOverride: ""
+
+# Labels applied to all resources
+commonLabels: {}
+# Annotations applied to all resources
+commonAnnotations: {}
+
+serviceAccount:
+  # Whether to create a ServiceAccount (source kustomize had none)
+  create: false
+  name: ""
+  annotations: {}
+
+config:
+  # If set, all deployments will reference this existing Secret instead of rendering one.
+  # When set, config.values is ignored entirely.
+  existingSecret: ""
+  # Application configuration rendered into a Secret (when existingSecret is empty).
+  # APP_KEY: leave empty to auto-generate on install/render.
+  #   - When non-empty here, the provided value is used as-is.
+  #   - When empty, the chart reuses the APP_KEY from an existing Secret of the
+  #     same name (via `helm lookup`) if one exists; otherwise it generates
+  #     `base64:<random>` at render time.
+  #   - Caveat: `helm template` (no cluster lookup) and brand-new installs will
+  #     generate a fresh key on every render. Set APP_KEY explicitly or use
+  #     config.existingSecret for fully reproducible output.
+  values:
+    APP_NAME: "XBoard"
+    APP_ENV: "production"
+    APP_KEY: ""
+    APP_DEBUG: "false"
+    APP_URL: "https://panel.example.com"
+    LOG_CHANNEL: "stack"
+    DB_CONNECTION: "pgsql"
+    DB_HOST: "xboard-app-db-rw"
+    DB_PORT: "5432"
+    DB_DATABASE: "xboard"
+    DB_USERNAME: "xboard"
+    DB_PASSWORD: "xboard"
+    REDIS_HOST: "redis-master"
+    REDIS_PASSWORD: "xboard"
+    REDIS_PORT: "6379"
+    BROADCAST_DRIVER: "log"
+    CACHE_DRIVER: "redis"
+    QUEUE_CONNECTION: "redis"
+    MAIL_DRIVER: "smtp"
+    MAIL_HOST: ""
+    MAIL_PORT: "465"
+    MAIL_USERNAME: "null"
+    MAIL_PASSWORD: "null"
+    MAIL_ENCRYPTION: "ssl"
+    MAIL_FROM_ADDRESS: ""
+    MAIL_FROM_NAME: "XBoard"
+    ENABLE_AUTO_BACKUP_AND_UPDATE: "false"
+    INSTALLED: "true"
+  # Additional key-value pairs merged into the Secret alongside config.values
+  extraValues: {}
+
+reloader:
+  # Enable Stakater Reloader annotation on Deployments (requires Reloader operator in cluster)
+  enabled: true
+
+web:
+  # replicas used only when hpa.enabled=false
+  replicas: 2
+  # Per-role image override (optional). Falls back to top-level image values.
+  image: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1024Mi
+  service:
+    type: ClusterIP
+    port: 80
+    portName: http
+    targetPort: 7001
+  containerPort: 7001
+  containerPortName: http
+  # Extra env vars appended after the standard disabled-flags block
+  extraEnv: []
+  # Flags to disable via ENABLE_<FLAG>=false. Each entry uppercased automatically.
+  disabledFlags:
+    - caddy
+    - horizon
+    - ws_server
+    - redis
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 80
+  pdb:
+    enabled: true
+    minAvailable: "25%"
+  probes:
+    startup:
+      tcpSocket:
+        port: http
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      failureThreshold: 30
+    liveness:
+      tcpSocket:
+        port: http
+      periodSeconds: 10
+      failureThreshold: 3
+    readiness:
+      httpGet:
+        path: /
+        port: http
+      periodSeconds: 10
+      failureThreshold: 3
+  terminationGracePeriodSeconds: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: "25%"
+  revisionHistoryLimit: 3
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+horizon:
+  replicas: 2
+  image: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1024Mi
+  extraEnv: []
+  disabledFlags:
+    - caddy
+    - web
+    - ws_server
+    - redis
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 80
+  pdb:
+    enabled: true
+    minAvailable: "25%"
+  probes:
+    startup:
+      exec:
+        command:
+          - php
+          - artisan
+          - horizon:status
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 10
+      failureThreshold: 30
+    liveness:
+      exec:
+        command:
+          - php
+          - artisan
+          - horizon:status
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readiness:
+      exec:
+        command:
+          - php
+          - artisan
+          - horizon:status
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+  terminationGracePeriodSeconds: 60
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: "25%"
+  revisionHistoryLimit: 3
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+ws:
+  replicas: 2
+  image: {}
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  containerPort: 8076
+  containerPortName: ws
+  service:
+    type: ClusterIP
+    port: 80
+    portName: ws
+    targetPort: 8076
+  extraEnv:
+    - name: WS_HOST
+      value: "0.0.0.0"
+  disabledFlags:
+    - caddy
+    - web
+    - horizon
+    - redis
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 4
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 80
+  pdb:
+    enabled: true
+    minAvailable: "25%"
+  probes:
+    startup:
+      tcpSocket:
+        port: ws
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 30
+    liveness:
+      tcpSocket:
+        port: ws
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
+    readiness:
+      tcpSocket:
+        port: ws
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      failureThreshold: 3
+  terminationGracePeriodSeconds: 30
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: "25%"
+  revisionHistoryLimit: 3
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+ingress:
+  hostname: "panel.example.com"
+  hsts:
+    enabled: true
+    value: "max-age=31536000; preload"
+  redirectHttpToHttps: true
+  routes:
+    web:
+      name: "xboard-web"
+      pathType: PathPrefix
+      pathValue: "/"
+    webRedirect:
+      name: "xboard-web-http-to-https"
+      pathType: PathPrefix
+      pathValue: "/"
+      statusCode: 301
+    ws:
+      name: "xboard-ws"
+      pathType: PathPrefix
+      pathValue: "/api/v2/server/ws"
+  parentRefs:
+    https:
+      - name: xboard-gateway
+        sectionName: https
+    http:
+      - name: xboard-gateway
+        sectionName: http
+
+gateway:
+  # Set to true to render a Gateway resource in this chart.
+  # Default false: assumes an existing Gateway (e.g. from cert/ directory) is already deployed.
+  create: false
+  name: xboard-gateway
+  className: traefik
+  listeners:
+    http:
+      enabled: true
+      port: 8000
+      protocol: HTTP
+    https:
+      enabled: true
+      port: 8443
+      protocol: HTTPS
+      tlsMode: Terminate
+      certificateRefs:
+        - name: xboard-cert-tls
+  allowedRoutesFrom: Same

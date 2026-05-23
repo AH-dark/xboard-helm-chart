@@ -1,0 +1,38 @@
+XBoard has been deployed successfully!
+
+Access URL: https://{{ .Values.ingress.hostname }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WARNING: MIGRATION FROM KUSTOMIZE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This chart uses Helm-standard selector labels (app.kubernetes.io/*).
+If you are migrating from the Kustomize-based deployment in
+xboard/xboard/, the existing Deployments/Services/PDBs
+MUST be deleted before helm install because selector fields are
+immutable. See README.md Migration section for full instructions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Prerequisites (verify these are installed in your cluster):
+  - Gateway API v1 CRDs (gateway.networking.k8s.io/v1)
+  - CNPG Cluster 'xboard-app-db' is ready (provides DB_HOST)
+  - Redis release 'redis' is ready (provides REDIS_HOST)
+{{- if .Values.reloader.enabled }}
+  - Stakater Reloader operator (reloader.enabled=true)
+{{- end }}
+{{- if not .Values.gateway.create }}
+  - Gateway 'xboard-gateway' exists in namespace {{ .Release.Namespace }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Inspect deployed resources:
+  kubectl get deploy,svc,httproute,hpa,pdb \
+    -n {{ .Release.Namespace }} \
+    -l app.kubernetes.io/part-of=xboard
+
+Check Horizon queue worker health:
+  kubectl exec -n {{ .Release.Namespace }} \
+    deploy/{{ .Release.Name }}-xboard-horizon \
+    -- php artisan horizon:status

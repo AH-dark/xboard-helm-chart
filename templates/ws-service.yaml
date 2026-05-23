@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "xboard.componentName" (dict "ctx" . "role" "ws-server") }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "ws-server") | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.ws.service.type }}
+  selector:
+    {{- include "xboard.selectorLabels" (dict "ctx" . "role" "ws-server") | nindent 4 }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.ws.service.port }}
+      targetPort: {{ .Values.ws.containerPortName }}
+      name: {{ .Values.ws.service.portName }}

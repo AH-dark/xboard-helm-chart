@@ -1,0 +1,35 @@
+{{- if .Values.gateway.create }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name | default "xboard-gateway" }}
+  labels:
+    {{- include "xboard.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className | default "traefik" }}
+  listeners:
+    {{- if .Values.gateway.listeners.http.enabled }}
+    - name: http
+      protocol: {{ .Values.gateway.listeners.http.protocol | default "HTTP" }}
+      port: {{ .Values.gateway.listeners.http.port | int }}
+      allowedRoutes:
+        namespaces:
+          from: {{ .Values.gateway.allowedRoutesFrom | default "Same" }}
+    {{- end }}
+    {{- if .Values.gateway.listeners.https.enabled }}
+    - name: https
+      protocol: {{ .Values.gateway.listeners.https.protocol | default "HTTPS" }}
+      port: {{ .Values.gateway.listeners.https.port | int }}
+      tls:
+        mode: {{ .Values.gateway.listeners.https.tlsMode | default "Terminate" }}
+        certificateRefs:
+          {{- toYaml .Values.gateway.listeners.https.certificateRefs | nindent 10 }}
+      allowedRoutes:
+        namespaces:
+          from: {{ .Values.gateway.allowedRoutesFrom | default "Same" }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Local tooling
+.sisyphus/
+.venv/
+__pycache__/
+
+# Helm packaging output
+*.tgz
+charts/*.tgz
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+*.secret.yaml
+*-secret.yaml

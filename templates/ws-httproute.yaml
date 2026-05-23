@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.ingress.routes.ws.name }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "ws-server") | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.ingress.parentRefs.https | nindent 4 }}
+  hostnames:
+    - {{ .Values.ingress.hostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: {{ .Values.ingress.routes.ws.pathType }}
+            value: {{ .Values.ingress.routes.ws.pathValue | quote }}
+      backendRefs:
+        - name: {{ include "xboard.componentName" (dict "ctx" . "role" "ws-server") }}
+          port: {{ .Values.ws.service.port }}

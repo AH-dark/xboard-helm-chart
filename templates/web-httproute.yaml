@@ -1,0 +1,31 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.ingress.routes.web.name }}
+  labels:
+    {{- include "xboard.componentLabels" (dict "ctx" . "role" "web") | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.ingress.parentRefs.https | nindent 4 }}
+  hostnames:
+    - {{ .Values.ingress.hostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: {{ .Values.ingress.routes.web.pathType }}
+            value: {{ .Values.ingress.routes.web.pathValue | quote }}
+      backendRefs:
+        - name: {{ include "xboard.componentName" (dict "ctx" . "role" "web") }}
+          port: {{ .Values.web.service.port }}
+      {{- if .Values.ingress.hsts.enabled }}
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            add:
+              - name: Strict-Transport-Security
+                value: {{ .Values.ingress.hsts.value | quote }}
+      {{- end }}

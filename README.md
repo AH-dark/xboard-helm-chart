@@ -1,12 +1,17 @@
 # xboard Helm Chart
 
-Helm chart for deploying the XBoard panel application on Kubernetes.
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/xboard)](https://artifacthub.io/packages/search?repo=xboard)
+[![Lint Charts](https://img.shields.io/github/actions/workflow/status/AH-dark/xboard-helm-chart/lint.yml?branch=main&label=lint&logo=github)](https://github.com/AH-dark/xboard-helm-chart/actions/workflows/lint.yml)
+[![Release Charts](https://img.shields.io/github/actions/workflow/status/AH-dark/xboard-helm-chart/release.yml?branch=main&label=release&logo=github)](https://github.com/AH-dark/xboard-helm-chart/actions/workflows/release.yml)
+[![License](https://img.shields.io/github/license/AH-dark/xboard-helm-chart?label=license)](LICENSE)
 
-**Chart version**: 0.1.0 | **App version**: latest | **Kubernetes**: >= 1.29
+Helm chart for deploying the [XBoard](https://github.com/cedar2025/xboard) panel (web + horizon + ws-server) on Kubernetes.
+
+**Chart**: `0.1.0` · **App**: `latest` · **Kubernetes**: `≥ 1.29` · **Helm**: `≥ 3.14`
 
 ## Overview
 
-This chart deploys three components of the [XBoard](https://github.com/cedar2025/xboard) panel:
+This chart deploys three components of XBoard:
 
 | Component     | Description                    | Resources                                     |
 | ------------- | ------------------------------ | --------------------------------------------- |
@@ -29,7 +34,9 @@ This chart deploys three components of the [XBoard](https://github.com/cedar2025
 
 ---
 
-## Install from Helm Repository
+## Installation
+
+### From Helm repository
 
 ```bash
 helm repo add xboard https://ah-dark.github.io/xboard-helm-chart
@@ -39,7 +46,7 @@ helm install xboard xboard/xboard \
   --create-namespace
 ```
 
-## Install from Source
+### From source
 
 ```bash
 git clone https://github.com/AH-dark/xboard-helm-chart.git
@@ -47,6 +54,8 @@ helm install xboard ./xboard-helm-chart/charts/xboard \
   --namespace xboard \
   --create-namespace
 ```
+
+### APP_KEY handling
 
 The chart auto-generates `APP_KEY` when it is left empty and no `config.existingSecret` is set. On `helm upgrade` the existing in-cluster value is reused via `helm lookup`, so pods are not invalidated.
 

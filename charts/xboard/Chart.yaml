@@ -2,7 +2,7 @@ apiVersion: v2
 name: xboard
 description: A Helm chart for deploying the XBoard panel (web + horizon + ws-server)
 type: application
-version: 0.1.0
+version: 0.1.1
 appVersion: "latest"
 kubeVersion: ">=1.29.0-0"
 keywords:
@@ -29,7 +29,7 @@ annotations:
     - name: support
       url: https://github.com/AH-dark/xboard-helm-chart/issues
   artifacthub.io/changes: |
-    - kind: changed
-      description: Restructure chart into charts/xboard/ for chart-releaser-action
     - kind: added
-      description: AGPL-3.0 LICENSE and Artifact Hub metadata annotations
+      description: Chart README rendered on Artifact Hub via symlink to repository root
+    - kind: changed
+      description: Refine README with Artifact Hub and CI status badges

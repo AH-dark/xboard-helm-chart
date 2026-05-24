@@ -7,7 +7,7 @@
 
 Helm chart for deploying the [XBoard](https://github.com/cedar2025/xboard) panel (web + horizon + ws-server) on Kubernetes.
 
-**Chart**: `0.1.0` · **App**: `latest` · **Kubernetes**: `≥ 1.29` · **Helm**: `≥ 3.14`
+**Chart**: `0.1.1` · **App**: `latest` · **Kubernetes**: `≥ 1.29` · **Helm**: `≥ 3.14`
 
 ## Overview
 

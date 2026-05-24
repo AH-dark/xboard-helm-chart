@@ -4,6 +4,45 @@ entries:
   - annotations:
       artifacthub.io/category: networking
       artifacthub.io/changes: |
+        - kind: added
+          description: Chart README rendered on Artifact Hub via symlink to repository root
+        - kind: changed
+          description: Refine README with Artifact Hub and CI status badges
+      artifacthub.io/license: AGPL-3.0-or-later
+      artifacthub.io/links: |
+        - name: source
+          url: https://github.com/AH-dark/xboard-helm-chart
+        - name: upstream
+          url: https://github.com/cedar2025/xboard
+        - name: support
+          url: https://github.com/AH-dark/xboard-helm-chart/issues
+    apiVersion: v2
+    appVersion: latest
+    created: "2026-05-24T23:35:21.216793412Z"
+    description: A Helm chart for deploying the XBoard panel (web + horizon + ws-server)
+    digest: 3cefb2255135e46e9a84d2c9855d4c54b535b737e7ddfc2811e6b2d195ba41d3
+    home: https://github.com/AH-dark/xboard-helm-chart
+    keywords:
+    - xboard
+    - laravel
+    - v2board
+    - panel
+    kubeVersion: '>=1.29.0-0'
+    maintainers:
+    - email: ahdark0428@gmail.com
+      name: AH-dark
+      url: https://github.com/AH-dark
+    name: xboard
+    sources:
+    - https://github.com/AH-dark/xboard-helm-chart
+    - https://github.com/cedar2025/xboard
+    type: application
+    urls:
+    - https://github.com/AH-dark/xboard-helm-chart/releases/download/xboard-0.1.1/xboard-0.1.1.tgz
+    version: 0.1.1
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
         - kind: changed
           description: Restructure chart into charts/xboard/ for chart-releaser-action
         - kind: added
@@ -40,4 +79,4 @@ entries:
     urls:
     - https://github.com/AH-dark/xboard-helm-chart/releases/download/xboard-0.1.0/xboard-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-24T13:18:23.868353185Z"
+generated: "2026-05-24T23:35:21.216802208Z"

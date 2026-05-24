@@ -113,6 +113,8 @@ helm install xboard ./xboard-helm \
 
 ### Ingress (Gateway API)
 
+This chart only renders HTTPRoutes; the referenced Gateway must be provisioned out of band (for example via `xboard/cert/gateway.yaml` or a shared cluster-level gateway).
+
 | Key                           | Default                                            | Description                             |
 | ----------------------------- | -------------------------------------------------- | --------------------------------------- |
 | `ingress.hostname`            | `panel.example.com`                              | Public hostname                         |
@@ -120,16 +122,6 @@ helm install xboard ./xboard-helm \
 | `ingress.redirectHttpToHttps` | `true`                                             | Render HTTP to HTTPS redirect HTTPRoute |
 | `ingress.parentRefs.https`    | `[{name: xboard-gateway, sectionName: https}]` | HTTPS listener parentRef                |
 | `ingress.parentRefs.http`     | `[{name: xboard-gateway, sectionName: http}]`  | HTTP listener parentRef                 |
-
-### Gateway (optional)
-
-| Key                                       | Default                         | Description                             |
-| ----------------------------------------- | ------------------------------- | --------------------------------------- |
-| `gateway.create`                          | `false`                         | Render a Gateway resource in this chart |
-| `gateway.className`                       | `traefik`                       | GatewayClass name                       |
-| `gateway.listeners.http.port`             | `8000`                          | HTTP listener port                      |
-| `gateway.listeners.https.port`            | `8443`                          | HTTPS listener port                     |
-| `gateway.listeners.https.certificateRefs` | `[{name: xboard-cert-tls}]` | TLS certificate secret                  |
 
 ---
 
@@ -167,17 +159,9 @@ When `config.existingSecret` is set, `config.values` is **completely ignored** a
 
 ---
 
-## Gateway Optional
+## Bring Your Own Gateway
 
-By default (`gateway.create=false`), this chart assumes an external Gateway named `xboard-gateway` already exists in the namespace (e.g. deployed from `xboard/cert/gateway.yaml`).
-
-To render a Gateway within this chart:
-
-```bash
-helm install xboard ./xboard-helm \
-  --namespace xboard \
-  --set gateway.create=true
-```
+This chart does not render a `Gateway` resource. It assumes an external Gateway named `xboard-gateway` already exists in the namespace (e.g. deployed from `xboard/cert/gateway.yaml`).
 
 To point HTTPRoutes at a different Gateway (e.g. shared cluster-level gateway):
 

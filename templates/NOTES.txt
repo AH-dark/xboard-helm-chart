@@ -21,9 +21,7 @@ Prerequisites (verify these are installed in your cluster):
 {{- if .Values.reloader.enabled }}
   - Stakater Reloader operator (reloader.enabled=true)
 {{- end }}
-{{- if not .Values.gateway.create }}
   - Gateway 'xboard-gateway' exists in namespace {{ .Release.Namespace }}
-{{- end }}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

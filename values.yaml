@@ -334,23 +334,3 @@ ingress:
     http:
       - name: xboard-gateway
         sectionName: http
-
-gateway:
-  # Set to true to render a Gateway resource in this chart.
-  # Default false: assumes an existing Gateway (e.g. from cert/ directory) is already deployed.
-  create: false
-  name: xboard-gateway
-  className: traefik
-  listeners:
-    http:
-      enabled: true
-      port: 8000
-      protocol: HTTP
-    https:
-      enabled: true
-      port: 8443
-      protocol: HTTPS
-      tlsMode: Terminate
-      certificateRefs:
-        - name: xboard-cert-tls
-  allowedRoutesFrom: Same

@@ -4,16 +4,6 @@ Access URL: https://{{ .Values.ingress.hostname }}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-WARNING: MIGRATION FROM KUSTOMIZE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-This chart uses Helm-standard selector labels (app.kubernetes.io/*).
-If you are migrating from the Kustomize-based deployment in
-xboard/xboard/, the existing Deployments/Services/PDBs
-MUST be deleted before helm install because selector fields are
-immutable. See README.md Migration section for full instructions.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 Prerequisites (verify these are installed in your cluster):
   - Gateway API v1 CRDs (gateway.networking.k8s.io/v1)
   - CNPG Cluster 'xboard-app-db' is ready (provides DB_HOST)

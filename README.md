@@ -18,31 +18,6 @@ This chart deploys three components of the [XBoard](https://github.com/cedar2025
 
 ---
 
-## Migration Warning from Kustomize
-
-> **This chart is NOT a drop-in replacement for the existing Kustomize deployment.**
-
-This chart uses Helm-standard selector labels (`app.kubernetes.io/*`). The existing Kustomize deployment uses `app: <role>` selectors. Kubernetes Deployment selectors are **immutable** — in-place upgrade is impossible when migrating from Kustomize to Helm.
-
-**Required migration steps:**
-
-1. Schedule a maintenance window (brief service interruption expected)
-2. Stop the ArgoCD Application (or suspend it to prevent re-sync):
-   ```bash
-   kubectl patch app xboard -n argocd --type merge -p '{"spec":{"syncPolicy":null}}'
-   ```
-3. Delete the existing Kustomize resources:
-   ```bash
-   kubectl delete -k xboard/xboard -n xboard
-   ```
-4. Install this chart (see Quick Start below)
-5. Verify Horizon queue worker:
-   ```bash
-   kubectl exec -n xboard deploy/xboard-xboard-horizon -- php artisan horizon:status
-   ```
-
----
-
 ## Prerequisites
 
 - Kubernetes >= 1.29
@@ -54,10 +29,21 @@ This chart uses Helm-standard selector labels (`app.kubernetes.io/*`). The exist
 
 ---
 
-## Quick Start
+## Install from Helm Repository
 
 ```bash
-helm install xboard ./xboard-helm \
+helm repo add xboard https://ah-dark.github.io/xboard-helm-chart
+helm repo update
+helm install xboard xboard/xboard \
+  --namespace xboard \
+  --create-namespace
+```
+
+## Install from Source
+
+```bash
+git clone https://github.com/AH-dark/xboard-helm-chart.git
+helm install xboard ./xboard-helm-chart/charts/xboard \
   --namespace xboard \
   --create-namespace
 ```
@@ -67,7 +53,7 @@ The chart auto-generates `APP_KEY` when it is left empty and no `config.existing
 For reproducible output (e.g. GitOps with `helm template`, dry-runs, or fully deterministic installs), set the key explicitly:
 
 ```bash
-helm install xboard ./xboard-helm \
+helm install xboard xboard/xboard \
   --namespace xboard \
   --create-namespace \
   --set config.values.APP_KEY="base64:$(openssl rand -base64 32)"
@@ -88,14 +74,14 @@ helm install xboard ./xboard-helm \
 
 ### Config (Application Environment)
 
-| Key                        | Default                       | Description                                                                                                                                   |
-| -------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config.existingSecret`    | `""`                          | Reference an existing Secret (bypasses config.values and APP_KEY generation)                                                                  |
-| `config.values.APP_KEY`    | `""`                          | Laravel encryption key. Empty = auto-generated at render time (reused via `helm lookup` on upgrade). Set explicitly for reproducible renders. |
+| Key                        | Default                     | Description                                                                                                                                   |
+| -------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config.existingSecret`    | `""`                        | Reference an existing Secret (bypasses config.values and APP_KEY generation)                                                                  |
+| `config.values.APP_KEY`    | `""`                        | Laravel encryption key. Empty = auto-generated at render time (reused via `helm lookup` on upgrade). Set explicitly for reproducible renders. |
 | `config.values.APP_URL`    | `https://panel.example.com` | Application URL                                                                                                                               |
-| `config.values.DB_HOST`    | `xboard-app-db-rw`            | PostgreSQL hostname (CNPG read-write service)                                                                                                 |
-| `config.values.REDIS_HOST` | `redis-master`     | Redis hostname                                                                                                                                |
-| `config.extraValues`       | `{}`                          | Additional env vars to merge into the Secret                                                                                                  |
+| `config.values.DB_HOST`    | `xboard-app-db-rw`          | PostgreSQL hostname (CNPG read-write service)                                                                                                 |
+| `config.values.REDIS_HOST` | `redis-master`              | Redis hostname                                                                                                                                |
+| `config.extraValues`       | `{}`                        | Additional env vars to merge into the Secret                                                                                                  |
 
 ### Per-Component Scaling (web / horizon / ws)
 
@@ -115,11 +101,11 @@ helm install xboard ./xboard-helm \
 
 This chart only renders HTTPRoutes; the referenced Gateway must be provisioned out of band (for example via `xboard/cert/gateway.yaml` or a shared cluster-level gateway).
 
-| Key                           | Default                                            | Description                             |
-| ----------------------------- | -------------------------------------------------- | --------------------------------------- |
-| `ingress.hostname`            | `panel.example.com`                              | Public hostname                         |
-| `ingress.hsts.enabled`        | `true`                                             | Add HSTS response header                |
-| `ingress.redirectHttpToHttps` | `true`                                             | Render HTTP to HTTPS redirect HTTPRoute |
+| Key                           | Default                                        | Description                             |
+| ----------------------------- | ---------------------------------------------- | --------------------------------------- |
+| `ingress.hostname`            | `panel.example.com`                            | Public hostname                         |
+| `ingress.hsts.enabled`        | `true`                                         | Add HSTS response header                |
+| `ingress.redirectHttpToHttps` | `true`                                         | Render HTTP to HTTPS redirect HTTPRoute |
 | `ingress.parentRefs.https`    | `[{name: xboard-gateway, sectionName: https}]` | HTTPS listener parentRef                |
 | `ingress.parentRefs.http`     | `[{name: xboard-gateway, sectionName: http}]`  | HTTP listener parentRef                 |
 
@@ -132,7 +118,7 @@ This chart only renders HTTPRoutes; the referenced Gateway must be provisioned o
 The chart renders a Secret from `config.values`. `APP_KEY` is auto-generated when empty; pass it explicitly only when you need a stable, externally-known value:
 
 ```bash
-helm install xboard ./xboard-helm \
+helm install xboard xboard/xboard \
   --namespace xboard \
   --set config.values.APP_KEY="base64:$(openssl rand -base64 32)" \
   --set config.values.DB_PASSWORD="my-db-password" \
@@ -150,7 +136,7 @@ kubectl create secret generic my-xboard-config \
   --from-env-file=config.env
 
 # Install chart pointing to existing secret
-helm install xboard ./xboard-helm \
+helm install xboard xboard/xboard \
   --namespace xboard \
   --set config.existingSecret=my-xboard-config
 ```
@@ -181,26 +167,12 @@ ingress:
 
 ---
 
-## Differences from Kustomize Source
-
-| Aspect                  | Kustomize source                                   | This chart                                                                   |
-| ----------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Labels                  | `app: <role>` only                                 | `app.kubernetes.io/{name,instance,version,managed-by,part-of,component}`     |
-| Selector                | `app: <role>`                                      | `app.kubernetes.io/{name,instance,component}` — immutable change             |
-| Config Secret name      | `xboard-config-<hash>` (kustomize hash suffix)     | `<release>-xboard-config` (stable, no hash)                                  |
-| Reloader annotation     | Points to hashed secret name (broken in kustomize) | Points to correct stable secret name (fixed)                                 |
-| Rolling restart trigger | Reloader only (often broken)                       | `checksum/config` annotation (always works) + Reloader annotation (optional) |
-| appVersion              | N/A                                                | `"latest"` (matches source behavior); pullPolicy auto-set to Always          |
-| Resource scope          | kustomize includes db/redis/cert/argocd            | Chart includes only web/horizon/ws-server                                    |
-
----
-
 ## Upgrade & Uninstall
 
 ### Upgrade
 
 ```bash
-helm upgrade xboard ./xboard-helm \
+helm upgrade xboard xboard/xboard \
   --namespace xboard
 ```
 
@@ -215,3 +187,9 @@ helm uninstall xboard --namespace xboard
 ```
 
 Note: PVCs (if any) and Secrets created outside this chart are NOT deleted by `helm uninstall`.
+
+---
+
+## License
+
+This chart is distributed under the [GNU Affero General Public License v3.0 or later](LICENSE) (`AGPL-3.0-or-later`).

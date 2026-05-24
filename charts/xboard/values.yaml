@@ -21,7 +21,7 @@ commonLabels: {}
 commonAnnotations: {}
 
 serviceAccount:
-  # Whether to create a ServiceAccount (source kustomize had none)
+  # Whether to create a ServiceAccount for the workload pods
   create: false
   name: ""
   annotations: {}

@@ -1,0 +1,69 @@
+name: Lint Charts
+
+on:
+  pull_request:
+    paths:
+      - 'charts/**'
+      - '.github/workflows/lint.yml'
+      - '.github/ct.yaml'
+  push:
+    branches-ignore:
+      - gh-pages
+    paths:
+      - 'charts/**'
+      - '.github/workflows/lint.yml'
+      - '.github/ct.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Detect changed charts
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --target-branch "${{ github.event.repository.default_branch }}")
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint changed charts
+        if: steps.list-changed.outputs.changed == 'true'
+        run: ct lint --target-branch "${{ github.event.repository.default_branch }}"
+
+      - name: Render with default values
+        run: helm template test charts/xboard
+
+      - name: Render with existing-secret mode
+        run: |
+          helm template test charts/xboard \
+            --set config.existingSecret=external-config
+
+      - name: Install kubeconform
+        run: |
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz kubeconform
+          sudo install -m 0755 kubeconform /usr/local/bin/kubeconform
+          rm -f kubeconform
+
+      - name: Validate rendered manifests against Kubernetes schemas
+        run: |
+          helm template test charts/xboard \
+            | kubeconform \
+                -strict \
+                -summary \
+                -ignore-missing-schemas \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{ .Group }}/{{ .ResourceKind }}_{{ .ResourceAPIVersion }}.json'
